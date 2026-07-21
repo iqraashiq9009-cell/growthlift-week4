@@ -3,33 +3,55 @@ const app = express();
 
 const PORT = 3000;
 
-// Middleware - logs every request
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
 
-// Middleware - allows reading JSON in request bodies
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Welcome to GrowthLift API");
+// In-memory data
+let tasks = [
+  { id: 1, title: "Learn Express", done: false },
+  { id: 2, title: "Build REST API", done: false },
+];
+
+// GET all tasks
+app.get("/api/tasks", (req, res) => {
+  res.json(tasks);
 });
 
-app.get("/about", (req, res) => {
-  res.send("This is the About route");
+// GET one task by id
+app.get("/api/tasks/:id", (req, res) => {
+  const task = tasks.find((t) => t.id === parseInt(req.params.id));
+  if (!task) return res.status(404).json({ message: "Task not found" });
+  res.json(task);
 });
 
-app.get("/api/interns", (req, res) => {
-  res.json({ interns: ["Ali", "Sara", "Bilal"] });
+// POST create a new task
+app.post("/api/tasks", (req, res) => {
+  const newTask = {
+    id: tasks.length + 1,
+    title: req.body.title,
+    done: false,
+  };
+  tasks.push(newTask);
+  res.status(201).json(newTask);
 });
 
-app.get("/api/interns/:id", (req, res) => {
-  res.json({ id: req.params.id, name: "Sample Intern" });
+// PUT update an existing task
+app.put("/api/tasks/:id", (req, res) => {
+  const task = tasks.find((t) => t.id === parseInt(req.params.id));
+  if (!task) return res.status(404).json({ message: "Not found" });
+  task.title = req.body.title;
+  task.done = req.body.done;
+  res.json(task);
 });
 
-app.get("/api/search", (req, res) => {
-  res.json({ query: req.query.q });
+// DELETE a task
+app.delete("/api/tasks/:id", (req, res) => {
+  tasks = tasks.filter((t) => t.id !== parseInt(req.params.id));
+  res.status(204).send();
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
