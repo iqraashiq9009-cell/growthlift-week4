@@ -6,8 +6,13 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.log(err));
 
 const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
 const app = express();
 const Task = require("./models/Task");
+
+app.use(helmet());
+app.use(cors());
 
 const PORT = 3000;
 
@@ -20,34 +25,68 @@ app.use(express.json());
 
 // GET all tasks
 app.get("/api/tasks", async (req, res) => {
-  const tasks = await Task.find();
-  res.json(tasks);
+  try {
+    const tasks = await Task.find();
+    res.json(tasks);
+  } catch (err) {
+    res.status(400).json({ message: "Invalid request" });
+  }
 });
 
 // GET one task by id
 app.get("/api/tasks/:id", async (req, res) => {
-  const task = await Task.findById(req.params.id);
-  if (!task) return res.status(404).json({ message: "Not found" });
-  res.json(task);
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Not found" });
+    res.json(task);
+  } catch (err) {
+    res.status(400).json({ message: "Invalid ID format" });
+  }
 });
 
 // POST create a new task
 app.post("/api/tasks", async (req, res) => {
-  const task = await Task.create({ title: req.body.title });
-  res.status(201).json(task);
+  if (!req.body.title) {
+    return res.status(400).json({ message: "Title is required" });
+  }
+  try {
+    const task = await Task.create({ title: req.body.title });
+    res.status(201).json(task);
+  } catch (err) {
+    res.status(400).json({ message: "Invalid request" });
+  }
 });
 
 // PUT update an existing task
 app.put("/api/tasks/:id", async (req, res) => {
-  const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  if (!task) return res.status(404).json({ message: "Not found" });
-  res.json(task);
+  try {
+    const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!task) return res.status(404).json({ message: "Not found" });
+    res.json(task);
+  } catch (err) {
+    res.status(400).json({ message: "Invalid ID format" });
+  }
 });
 
 // DELETE a task
 app.delete("/api/tasks/:id", async (req, res) => {
-  await Task.findByIdAndDelete(req.params.id);
-  res.status(204).send();
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+    res.status(204).send();
+  } catch (err) {
+    res.status(400).json({ message: "Invalid ID format" });
+  }
+});
+
+// 404 handler for unknown routes
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Something went wrong on the server" });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
