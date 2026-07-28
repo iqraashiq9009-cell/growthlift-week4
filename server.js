@@ -11,6 +11,7 @@ const cors = require("cors");
 const app = express();
 const Task = require("./models/Task");
 const authRoutes = require("./routes/auth");
+const protect = require("./middleware/auth");
 
 app.use(helmet());
 app.use(cors());
@@ -26,7 +27,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 // GET all tasks
-app.get("/api/tasks", async (req, res) => {
+app.get("/api/tasks", protect, async (req, res) => {
   try {
     const tasks = await Task.find();
     res.json(tasks);
@@ -36,7 +37,7 @@ app.get("/api/tasks", async (req, res) => {
 });
 
 // GET one task by id
-app.get("/api/tasks/:id", async (req, res) => {
+app.get("/api/tasks/:id", protect, async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ message: "Not found" });
@@ -47,7 +48,7 @@ app.get("/api/tasks/:id", async (req, res) => {
 });
 
 // POST create a new task
-app.post("/api/tasks", async (req, res) => {
+app.post("/api/tasks", protect, async (req, res) => {
   if (!req.body.title) {
     return res.status(400).json({ message: "Title is required" });
   }
@@ -60,7 +61,7 @@ app.post("/api/tasks", async (req, res) => {
 });
 
 // PUT update an existing task
-app.put("/api/tasks/:id", async (req, res) => {
+app.put("/api/tasks/:id", protect, async (req, res) => {
   try {
     const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!task) return res.status(404).json({ message: "Not found" });
@@ -71,7 +72,7 @@ app.put("/api/tasks/:id", async (req, res) => {
 });
 
 // DELETE a task
-app.delete("/api/tasks/:id", async (req, res) => {
+app.delete("/api/tasks/:id", protect, async (req, res) => {
   try {
     await Task.findByIdAndDelete(req.params.id);
     res.status(204).send();
