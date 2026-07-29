@@ -71,6 +71,19 @@ app.put("/api/tasks/:id", protect, async (req, res) => {
   }
 });
 
+// PATCH toggle done status
+app.patch("/api/tasks/:id/toggle", protect, async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Not found" });
+    task.done = !task.done;
+    await task.save();
+    res.json(task);
+  } catch (err) {
+    res.status(400).json({ message: "Invalid ID format" });
+  }
+});
+
 // DELETE a task
 app.delete("/api/tasks/:id", protect, async (req, res) => {
   try {
